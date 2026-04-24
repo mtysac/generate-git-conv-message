@@ -8,24 +8,19 @@ import argparse
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "llama3")
-MAX_DIFF_CHARS = 8000  # truncate large diffs before sending to Ollama
+MAX_DIFF_CHARS = 6000  # ~1500 tokens, leaves plenty of room in llama3's 8k context window
+# Budget breakdown: ~120 tokens system prompt + ~1500 tokens diff + ~80 tokens output = ~1700 total
 
 SYSTEM_PROMPT = """You are an expert at writing Git conventional commit messages.
 
-Given a git diff, generate a single conventional commit message following this format:
+Given a git diff, generate a single conventional commit message header in this format:
   <type>(<scope>): <short description>
-
-  [optional body]
-
-  [optional footer]
 
 Rules:
 - type must be one of: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
 - scope is optional but recommended (e.g. the module or file affected)
 - short description: imperative mood, lowercase, no period, max 72 chars
-- body: explain *what* and *why*, not *how* (wrap at 72 chars)
-- footer: reference issues if relevant (e.g. Closes #123)
-- Output ONLY the commit message, no extra commentary or markdown fences
+- Output ONLY the single header line, nothing else
 """
 
 
@@ -47,10 +42,16 @@ def truncate_diff(diff: str) -> str:
     if len(diff) <= MAX_DIFF_CHARS:
         return diff
     print(
-        f"Warning: diff is large ({len(diff)} chars), truncating to {MAX_DIFF_CHARS} chars.\n",
+        f"Warning: diff is large ({len(diff)} chars), truncating to {MAX_DIFF_CHARS} chars to stay within model context limit.\n",
         file=sys.stderr,
     )
-    return diff[:MAX_DIFF_CHARS] + "\n\n[... diff truncated ...]"
+    # Keep the start of the diff (file headers + first changes) as they're most informative
+    truncated = diff[:MAX_DIFF_CHARS]
+    # Cut at the last complete line to avoid sending a broken mid-line diff
+    last_newline = truncated.rfind("\n")
+    if last_newline > 0:
+        truncated = truncated[:last_newline]
+    return truncated + "\n\n[... diff truncated to fit model context limit ...]"
 
 
 def check_ollama_running() -> bool:
@@ -81,7 +82,7 @@ def generate_commit_message(diff: str, model: str) -> str:
             },
         ],
         "stream": False,
-        "options": {"temperature": 0.2},
+        "options": {"temperature": 0.2, "num_predict": 80},
     }).encode()
 
     req = urllib.request.Request(
