@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "git-commit-msg"
+version = "1.0.0"
+description = "Generate conventional commit messages from staged git diffs using a local LLM"
+requires-python = ">=3.8"
+
+[project.scripts]
+git-msg = "main:main"
