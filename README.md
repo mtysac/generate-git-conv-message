@@ -2,6 +2,8 @@
 
 A CLI tool that reads your staged git diff and generates a conventional commit message header using a local LLM (Ollama). No API key, no cost, works offline. Once installed, works globally across all your repos.
 
+![Tests](https://github.com/mtysac/generate-git-conv-messa/actions/workflows/test.yml/badge.svg)
+
 ---
 
 ## 1. Install Ollama
@@ -114,6 +116,19 @@ Warning: diff is large (XXXX chars), truncating to 6000 chars to stay within mod
 ```
 
 The tool always cuts at a complete line so the diff sent to the model is clean.
+
+---
+
+## Development
+
+### Running tests
+
+```bash
+pip install pytest
+pytest tests/ -v --import-mode=importlib
+```
+
+Tests cover diff truncation, Ollama connectivity checks, git diff parsing, and clipboard handling. CI runs automatically on every push via GitHub Actions.
 
 ---
 
