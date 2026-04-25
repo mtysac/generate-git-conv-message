@@ -5,13 +5,14 @@ import json
 import urllib.request
 import urllib.error
 import argparse
+from argparse import Namespace
 
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "llama3")
-MAX_DIFF_CHARS = 6000  # ~1500 tokens, leaves plenty of room in llama3's 8k context window
+OLLAMA_URL: str = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+DEFAULT_MODEL: str = os.environ.get("OLLAMA_MODEL", "llama3")
+MAX_DIFF_CHARS: int = 6000  # ~1500 tokens, leaves plenty of room in llama3's 8k context window
 # Budget breakdown: ~120 tokens system prompt + ~1500 tokens diff + ~80 tokens output = ~1700 total
 
-SYSTEM_PROMPT = """You are an expert at writing Git conventional commit messages.
+SYSTEM_PROMPT: str = """You are an expert at writing Git conventional commit messages.
 
 Given a git diff, generate a single conventional commit message header in this format:
   <type>(<scope>): <short description>
@@ -25,6 +26,7 @@ Rules:
 
 
 def get_staged_diff() -> str:
+    """Run git diff --cached and return the output as a string."""
     result = subprocess.run(
         ["git", "diff", "--cached"],
         capture_output=True,
@@ -39,6 +41,7 @@ def get_staged_diff() -> str:
 
 
 def truncate_diff(diff: str) -> str:
+    """Truncate diff to MAX_DIFF_CHARS, cutting at a clean line boundary."""
     if len(diff) <= MAX_DIFF_CHARS:
         return diff
     print(
@@ -46,15 +49,16 @@ def truncate_diff(diff: str) -> str:
         file=sys.stderr,
     )
     # Keep the start of the diff (file headers + first changes) as they're most informative
-    truncated = diff[:MAX_DIFF_CHARS]
+    truncated: str = diff[:MAX_DIFF_CHARS]
     # Cut at the last complete line to avoid sending a broken mid-line diff
-    last_newline = truncated.rfind("\n")
+    last_newline: int = truncated.rfind("\n")
     if last_newline > 0:
         truncated = truncated[:last_newline]
     return truncated + "\n\n[... diff truncated to fit model context limit ...]"
 
 
 def check_ollama_running() -> bool:
+    """Return True if the Ollama server is reachable."""
     try:
         urllib.request.urlopen(f"{OLLAMA_URL}/api/tags", timeout=3)
         return True
@@ -63,6 +67,7 @@ def check_ollama_running() -> bool:
 
 
 def generate_commit_message(diff: str, model: str) -> str:
+    """Send the diff to Ollama and return a conventional commit message header."""
     if not check_ollama_running():
         print(
             "Error: Ollama is not running.\n"
@@ -72,7 +77,7 @@ def generate_commit_message(diff: str, model: str) -> str:
         )
         sys.exit(1)
 
-    payload = json.dumps({
+    payload: bytes = json.dumps({
         "model": model,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -94,7 +99,7 @@ def generate_commit_message(diff: str, model: str) -> str:
 
     try:
         with urllib.request.urlopen(req, timeout=120) as resp:
-            body = json.loads(resp.read().decode())
+            body: dict = json.loads(resp.read().decode())
             return body["message"]["content"].strip()
     except urllib.error.URLError as e:
         print(f"Error communicating with Ollama: {e}", file=sys.stderr)
@@ -102,6 +107,7 @@ def generate_commit_message(diff: str, model: str) -> str:
 
 
 def copy_to_clipboard(text: str) -> bool:
+    """Copy text to the system clipboard. Returns True on success."""
     try:
         subprocess.run(
             ["clip"],
@@ -122,7 +128,8 @@ def copy_to_clipboard(text: str) -> bool:
     return False
 
 
-def parse_args():
+def parse_args() -> Namespace:
+    """Parse and return CLI arguments."""
     parser = argparse.ArgumentParser(
         description="Generate a conventional commit message from staged git changes using a local LLM."
     )
@@ -139,10 +146,10 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
-    args = parse_args()
+def main() -> None:
+    args: Namespace = parse_args()
 
-    diff = get_staged_diff()
+    diff: str = get_staged_diff()
 
     if not diff.strip():
         print("No staged changes found. Stage your changes with `git add` first.")
@@ -151,7 +158,7 @@ def main():
     diff = truncate_diff(diff)
 
     print(f"Analyzing staged diff with {args.model}...\n", file=sys.stderr)
-    message = generate_commit_message(diff, args.model)
+    message: str = generate_commit_message(diff, args.model)
     print(message)
 
     if args.copy:
