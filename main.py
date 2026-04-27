@@ -1,10 +1,10 @@
+import argparse
+import json
+import os
 import subprocess
 import sys
-import os
-import json
-import urllib.request
 import urllib.error
-import argparse
+import urllib.request
 from argparse import Namespace
 
 OLLAMA_URL: str = os.environ.get("OLLAMA_URL", "http://localhost:11434")
@@ -186,6 +186,11 @@ def parse_args() -> Namespace:
         action="store_true",
         help="Copy the generated message to clipboard",
     )
+    parser.add_argument(
+        "--dry-run", "-d",
+        action="store_true",
+        help="Print the diff that would be sent to the model without calling Ollama",
+    )
     return parser.parse_args()
 
 
@@ -199,6 +204,12 @@ def main() -> None:
         sys.exit(0)
 
     diff = truncate_diff(diff)
+
+    if args.dry_run:
+        print("--- Diff that would be sent to the model ---\n")
+        print(diff)
+        print(f"\n--- Model: {args.model} | Scope: {'yes' if args.scope else 'no'} ---")
+        sys.exit(0)
 
     print(f"Analyzing staged diff with {args.model}...\n", file=sys.stderr)
     message: str = generate_commit_message(diff, args.model, use_scope=args.scope)

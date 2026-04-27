@@ -75,6 +75,7 @@ git commit -m "$(git-msg)"
 | `--model` | `-m` | Ollama model to use (default: `llama3`) |
 | `--scope` | `-s` | Include a scope in the message e.g. `feat(auth): description` |
 | `--copy` | `-c` | Copy the generated message to clipboard |
+| `--dry-run` | `-d` | Print the diff that would be sent to the model without calling Ollama |
 
 Examples:
 
@@ -86,6 +87,9 @@ git-msg
 # with scope
 git-msg --scope
 # feat(auth): add login endpoint
+
+# preview what gets sent to the model
+git-msg --dry-run
 
 # use a different model
 git-msg --model mistral
@@ -139,7 +143,14 @@ pip install pytest
 pytest tests/ -v --import-mode=importlib
 ```
 
-Tests cover diff truncation, Ollama connectivity checks, git diff parsing, and clipboard handling. CI runs automatically on every push via GitHub Actions.
+Tests cover diff truncation, Ollama connectivity checks, git diff parsing, clipboard handling, and commit header extraction. CI runs lint (ruff) then tests automatically on every push via GitHub Actions.
+
+### Linting
+
+```bash
+pip install ruff
+ruff check .
+```
 
 ---
 

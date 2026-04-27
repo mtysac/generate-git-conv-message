@@ -1,0 +1,6 @@
+[lint]
+select = ["E", "F", "W", "I"]  # pycodestyle errors/warnings, pyflakes, isort
+ignore = ["E501"]               # ignore line length (handled by readability preference)
+
+[lint.isort]
+known-first-party = ["main"]

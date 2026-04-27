@@ -1,7 +1,15 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from main import truncate_diff, check_ollama_running, get_staged_diff, copy_to_clipboard, extract_commit_header, MAX_DIFF_CHARS
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from main import (
+    MAX_DIFF_CHARS,
+    check_ollama_running,
+    copy_to_clipboard,
+    extract_commit_header,
+    get_staged_diff,
+    truncate_diff,
+)
 
 # --- extract_commit_header ---
 
