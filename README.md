@@ -6,6 +6,9 @@ Website about conventional commits: https://www.conventionalcommits.org/en/v1.0.
 
 ![Tests](https://github.com/mtysac/generate-git-conv-message/actions/workflows/test.yml/badge.svg)
 
+<!-- Demo GIF: record with ScreenToGif (Windows) or asciinema and drop the file here -->
+<!-- ![demo](demo.gif) -->
+
 ---
 
 ## 1. Install Ollama
@@ -27,11 +30,29 @@ ollama serve
 To stop it, press `Ctrl+C` in the terminal where it's running. If it's running as a background service, stop it with:
 
 ```bash
-# macOS/Linux
+# Linux
+sudo service ollama stop
+
+# macOS
+killall Ollama
+
+# Windows
+Get-Process | Where-Object {$_.ProcessName -like '*ollama*'} | Stop-Process 
+
+# if you installed Ollama with homebrew
+brew services stop ollama
+
+```
+or open Task Manager (Ctrl + Shift + Esc), find the processes named "ollama" or similar, and manually end those tasks to stop Ollama
+
+These commands do not work when stopping it from running (it will restart right after):
+
+```bash
+# macOS
 pkill ollama
 
 # Windows
-taskkill /IM ollama.exe /F
+taskkill /F /IM ollama.exe
 ```
 
 You can verify Ollama is running by visiting http://localhost:11434 in your browser. If you see `Ollama is running`, you're good.
