@@ -2,7 +2,7 @@
 
 A CLI tool that reads your staged git diff and generates a conventional commit message header using a local LLM (Ollama). No API key, no cost, works offline. Once installed, works globally across all your repos.
 
-![Tests](https://github.com/mtysac/generate-git-conv-messa/actions/workflows/test.yml/badge.svg)
+![Tests](https://github.com/mtysac/git-conventional-message/actions/workflows/test.yml/badge.svg)
 
 ---
 
